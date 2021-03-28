@@ -1,0 +1,58 @@
+---
+- name: Create the Btrfs subvolume '/swap'
+  ansible.builtin.command: /usr/bin/btrfs subvolume create /swap
+  register: create_result
+  changed_when: create_result.stdout == "Create subvolume '/swap'"
+  failed_when: 'not "target path already exists" in result.stdout'
+
+- name: Check that '/swap' is a Btrfs subvolume if the path already exists
+  when: '"target path already exists" in create_result.stdout'
+  ansible.builtin.command: /usr/bin/btrfs property get -t subvol /swap
+  register: check_result
+  changed_when: false
+  failed_when: "'could not get subvolume flags: invalid argument' in check_result.stdout"
+
+# - name: Configure the swap subvolume to be mounted with copy-on-write disabled
+#   become: true
+#   ansible.posix.mount:
+#     src:
+#     path: /mnt
+#     opts: defaults,noatime,autodefrag,compress=zstd,commit=120,subvol=swap
+#     state: mounted
+#     fstab: /tmp/tmp.fstab
+
+- name: Restrict permissions on the swap subvolume and disable copy-on-write
+  ansible.builtin.file:
+    path: /swap
+    state: directory
+    owner: root
+    group: root
+    chmod: "0700"
+    attributes: +C
+  register: swap_directory
+  changed_when: "'C' not in swap_directory.diff.before.attributes"
+
+  # todo Is changed_when here needed?
+- name: Allocate the swapfile
+  ansible.builtin.command:
+    cmd: "fallocate -l {{ ansible_memtotal_mb }}MiB /swap/swapfile"
+    creates: /swap/swapfile
+
+# - name: Set permissions on the swapfile
+#   become: true
+#   ansible.builtin.file:
+#     path: /swap/swapfile
+#     state: touch
+#     owner: root
+#     group: root
+#     chmod: '0600'
+
+# todo Is it necessary to set compression none?
+- name: Check if compression is enabled for the swapfile
+  register: compression_check
+  ansible.builtin.command: /usr/bin/btrfs property get /swap/swapfile
+  changed_when: false
+
+- name: Disable compression on the swapfile
+  ansible.builtin.command: /usr/bin/btrfs property set /swap/swapfile compression none
+  changed_when: compression_check.stdout | length > 0

@@ -1,0 +1,55 @@
+---
+# tasks file for ansible_btrfs_swapfile
+
+# todo Only run this playbook when the root filesystem is Btrfs.
+
+# - name: Install the Btrfs package
+#   become: true
+#   ansible.builtin.package:
+#     name: btrfs-progs
+#     state: latest
+
+# - name: Mount the device with the root filesystem in order to create a top-level Btrfs subvolume
+#   become: true
+#   ansible.posix.mount:
+#     src: "{{ ansible_mounts|json_query('[?mount == `/`].device') }}"
+#     path: /mnt
+#     opts: defaults,noatime,
+#     state: mounted
+#     fstab: /tmp/tmp.fstab
+#   changed_when: false
+
+- name: Prepare the Btrfs swap subvolume and initial swapfile
+  ansible.builtin.include_tasks: btrfs.yml
+  when: "ansible_mounts|json_query('[?mount == `/`].mount') == 'btrfs'"
+
+- name: If Btrfs isn't being used, just create a typical swapfile at /swapfile
+  ansible.builtin.set_fact: 
+    swap_file_path: /swapfile
+  when: "ansible_mounts|json_query('[?mount == `/`].mount') != 'btrfs'"
+
+- name: Create the swapfile and configure swappiness
+  ansible.builtin.include_role:
+    name: geerlingguy.swap
+  # vars:
+    # swap_file_path: /swap/swapfile
+    # swap_swappiness: "60"
+# - name: Initialize the swapfile as swap
+
+# mkswap /swap/swapfile
+
+# swapon /swap/swapfile
+
+# fstab: /swap/swapfile none swap defaults 0 0
+
+# /swap/swapfile none swap defaults 0 0
+
+# echo vm.swappiness=10 | sudo tee /etc/sysctl.d/99-swappiness.conf
+
+# - name: Unmount '/mnt'
+#   become: true
+#   ansible.posix.mount:
+#     path: /mnt
+#     state: unmounted
+#     fstab: /tmp/tmp.fstab
+# todo Is the following necessary? changed_when: false

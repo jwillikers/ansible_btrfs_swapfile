@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  tasks:
+    - name: Include ansible_btrfs_swapfile
+      include_role:
+        name: "ansible_btrfs_swapfile"

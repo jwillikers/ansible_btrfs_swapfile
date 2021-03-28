@@ -1,0 +1,555 @@
+= Ansible Btrfs Swapfile
+Jordan Williams <jordan@jwillikers.com>
+:experimental:
+:icons: font
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+:Debian: https://www.debian.org/[Debian]
+:Fedora: https://getfedora.org/[Fedora]
+:Ubuntu: https://ubuntu.com/[Ubuntu]
+
+image:https://img.shields.io/github/workflow/status/jwillikers/ansible_btrfs_swapfile/Molecule%20Test[GitHub Workflow Status]
+
+An Ansible role to create and configure a Btrfs swapfile.
+
+.Supported Platforms
+* {Fedora}
+* {Ubuntu}
+
+== Quick Start
+
+To use this role, you're best off installing the necessary Python dependencies through Pipenv.
+
+. Clone this project's Git repository.
++
+[source,sh]
+----
+➜ git clone https://github.com/jwillikers/ansible_btrfs_swapfile.git ~/Projects/ansible_btrfs_swapfile
+----
+
+. Change to the project directory.
++
+[source,sh]
+----
+➜ cd ~/Projects/ansible_btrfs_swapfile
+----
+
+. Install Pipenv.
+
+Ubuntu:::
+
+.. Install the required packages.
++
+[source,sh]
+----
+➜ sudo apt -y install software-properties-common python-software-properties
+----
+
+.. Add the PyPa PPA.
++
+[source,sh]
+----
+➜ sudo add-apt-repository -uy ppa:pypa/ppa
+----
+
+.. Install Pipenv.
++
+[source,sh]
+----
+➜ sudo apt -y install pipenv
+----
+
+Fedora:::
++
+[source,sh]
+----
+➜ sudo dnf -y install pipenv
+----
+
+. Install the necessary dependencies in a dedicated virtual environment with Pipenv.
++
+[source,sh]
+----
+➜ pipenv install
+----
+
+. To run locally, execute the _local_ scenario with Molecule via Pipenv, of course.
++
+[source,sh]
+----
+➜ pipenv run molecule test --scenario local -- --ask-become-pass
+----
+
+== Reproducible Development Environment
+
+This project uses Ansible, Python, Molecule, and Podman.
+asdf is used to manage the Python runtime along with direnv and Pipenv to manage the project's virtual environment and Python dependencies.
+This promotes flexible, cross-distribution environments and makes builds more reproducible.
+Instructions for installing everything are provided below.
+
+. Install the dependencies needed for asdf.
++
+[source,sh]
+----
+➜ sudo apt -y install curl git
+----
+
+. If you use Btrfs and want to exclude the `~/.asdf` directory from snapshots of your home directory, create a subvolume for it.
++ 
+[source,sh]
+----
+➜ btrfs subvolume create ~/.asdf
+----
+
+. Pull down the https://github.com/asdf-vm/asdf[asdf repository] in to your home directory.
++
+[source,sh]
+----
+➜ git clone https://github.com/asdf-vm/asdf.git ~/.asdf
+----
+
+. Checkout the latest version of asdf.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ git -C ~/.asdf switch --detach (git -C ~/.asdf describe --abbrev=0 --tags)
+HEAD is now at c6145d0 Update version to 0.8.0
+----
+
+_Bash / ZSH_::
++
+[source,bash]
+----
+➜ git -C ~/.asdf switch --detach $(git -C ~/.asdf describe --abbrev=0 --tags)
+HEAD is now at c6145d0 Update version to 0.8.0
+----
+--
+
+. Enable asdf in your shell.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ mkdir -p ~/.config/fish/conf.d; \
+  and echo "source ~/.asdf/asdf.fish" > ~/.config/fish/conf.d/asdf.fish
+----
+
+_Bash_::
++
+[source,bash]
+----
+➜ echo '. $HOME/.asdf/asdf.sh' >> ~/.bashrc
+----
+
+_ZSH_::
++
+[source,zsh]
+----
+➜ echo '. $HOME/.asdf/asdf.sh' >> ~/.zshrc
+----
+--
+
+. Install shell completions for asdf.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ mkdir -p ~/.config/fish/completions; \
+  and ln -s ~/.asdf/completions/asdf.fish ~/.config/fish/completions
+----
+
+_Bash_::
++
+[source,bash]
+----
+➜ echo '. $HOME/.asdf/completions/asdf.bash' >> ~/.bashrc
+----
+
+_ZSH_::
++
+[source,zsh]
+----
+➜ echo -e 'fpath=(${ASDF_DIR}/completions $fpath)\nautoload -Uz compinit\ncompinit' >> ~/.zshrc
+----
+--
+
+. To make asdf available, reload your shell.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ exec fish
+----
+
+_Bash_::
++
+[source,bash]
+----
+➜ source ~/.bashrc
+----
+
+_ZSH_::
++
+[source,zsh]
+----
+➜ source ~/.zshrc
+----
+--
+
+. Install the necessary dependencies to build Python which are helpfully documented in the https://github.com/pyenv/pyenv/wiki#suggested-build-environment[Pyenv Wiki].
++
+[source,sh]
+----
+➜ sudo apt -y install make build-essential libssl-dev zlib1g-dev libbz2-dev \
+  libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev xz-utils \
+  tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+----
+
+. Add the https://github.com/danhper/asdf-python[Python plugin] to asdf.
++
+[source,sh]
+----
+➜ asdf plugin add python
+----
+
+. Before installing Pipenv, configure the default _global_ Python version for the user.
++
+--
+You can use the system version of Python by default or another version of your choice.
+
+[IMPORTANT]
+====
+Whenever the user's global version of Python is updated, Pipenv must be reinstalled which may require that all virtual environments be rebuilt.
+====
+
+--
+
+** Use the system's Python as the default.
+
+... Ubuntu installs Python as either `python2` or `python3` on the system.
++
+--
+This means that asdf won't be able to detect the system version of python.
+Install the Python package `python-is-python3` to install a `python` executable for the system which uses `python3`.
+
+[source,sh]
+----
+➜ sudo apt -y install python-is-python3
+----
+--
+
+... Install pip and venv because they are not installed by default on Ubuntu.
++
+[source,sh]
+----
+➜ sudo apt -y install python3-pip python3-venv
+----
+
+... Set the user's Python to the system-wide version.
++
+[source,sh]
+----
+➜ asdf global python system
+----
+
+** Or, you can use another version of Python for your user such as the latest and greatest version.
+
+... Build and install the latest version of Python.
++
+[source,sh]
+----
+➜ asdf install python latest
+----
+
+... Set the user's Python to the latest version available at this time.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ asdf global python (asdf latest python)
+----
+
+_Bash / ZSH_::
++
+[source,bash]
+----
+➜ asdf global python $(asdf latest python)
+----
+--
+
+. Install https://pipxproject.github.io/pipx/[pipx] for installing Pipenv in an isolated environment.
++
+[source,sh]
+----
+➜ python -m pip install --user pipx
+----
+
+. Add the directory where pip installs executables for the local user to `PATH`.
++
+[source,sh]
+----
+➜ python -m pipx ensurepath
+----
+
+. To make executables installed by pipx available, reload your shell.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ exec fish
+----
+
+_Bash_::
++
+[source,bash]
+----
+➜ source ~/.bashrc
+----
+
+_ZSH_::
++
+[source,zsh]
+----
+➜ source ~/.zshrc
+----
+--
+
+. Install Pipenv.
++
+[source,sh]
+----
+➜ python -m pipx install pipenv
+----
+
+. Add the direnv plugin to asdf.
++
+[source,sh]
+----
+➜ asdf plugin add direnv
+----
+
+. Integrate direnv with your shell.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ mkdir -p ~/.config/fish/conf.d; \
+  and echo "asdf exec direnv hook fish | source" > ~/.config/fish/conf.d/direnv.fish
+----
+
+_Bash_::
++
+[source,bash]
+----
+➜ echo 'eval "$(asdf exec direnv hook bash)"' >> ~/.bashrc
+----
+
+_ZSH_::
++
+[source,zsh]
+----
+➜ echo 'eval "$(asdf exec direnv hook zsh)"' >> ~/.zshrc
+----
+--
+
+. Make the asdf feature, i.e. the command `use asdf`, available in direnv.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ mkdir -p ~/.config/direnv; \
+  and echo 'source "$(asdf direnv hook asdf)"' >> ~/.config/direnv/direnvrc
+----
+
+_Bash / ZSH_::
++
+[source,bash]
+----
+➜ mkdir -p ~/.config/direnv; echo 'source "$(asdf direnv hook asdf)"' >> ~/.config/direnv/direnvrc
+----
+
+NOTE: The `direnvrc` file should only use Bash syntax.
+--
+
+. Add completions for Pipenv to your shell.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ echo "eval (pipenv --completion)" > ~/.config/fish/completions/pipenv.fish
+----
+
+_Bash_::
++
+[source,bash]
+----
+➜ echo 'eval "$(pipenv --completion)"' >> ~/.bashrc
+----
+
+_ZSH_::
++
+[source,zsh]
+----
+➜ echo 'eval "$(pipenv --completion)"' >> ~/.zshrc
+----
+--
+
+. Clone this project's Git repository.
++
+[source,sh]
+----
+➜ git clone https://github.com/jwillikers/ansible_btrfs_swapfile.git ~/Projects/ansible_btrfs_swapfile
+----
+
+. Change to the project directory.
++
+[source,sh]
+----
+➜ cd ~/Projects/ansible_btrfs_swapfile
+----
+
+. Run asdf to automatically install Python and direnv.
++
+--
+[source,sh]
+----
+➜ asdf install
+----
+
+[TIP]
+====
+If you haven't set a default global version of direnv, you should do so now.
+
+_fish_::
++
+[source,sh]
+----
+➜ asdf global direnv (asdf list direnv | awk 'FNR <= 1')
+----
+
+_Bash / ZSH_::
++
+[source,sh]
+----
+➜ asdf global direnv $(asdf list direnv | awk 'FNR <= 1')
+----
+====
+--
+
+. Reload your shell for direnv to be available.
++
+--
+_fish_::
++
+[source,sh]
+----
+➜ exec fish
+direnv: error /home/ubuntu/Source/MyProject/.envrc is blocked. Run `direnv allow` to approve its content
+----
+
+_Bash_::
++
+[source,bash]
+----
+➜ source ~/.bashrc
+direnv: error /home/ubuntu/Source/MyProject/.envrc is blocked. Run `direnv allow` to approve its content
+----
+
+_ZSH_::
++
+[source,zsh]
+----
+➜ source ~/.zshrc
+direnv: error /home/ubuntu/Source/MyProject/.envrc is blocked. Run `direnv allow` to approve its content
+----
+--
+
+. Enable automatic loading of the project's environment.
++
+[source,sh]
+----
+➜ direnv allow
+----
+
+Now, whenever you change into the project directory, the project's virtual environment will automatically be loaded for you.
+
+=== Test
+
+To create the container, run everything, test, and subsequently destroy the container, use `molecule test` from the project directory.
+
+[source,sh]
+----
+➜ molecule test
+----
+
+== References
+
+For further reading on the use of Ansible, Molecule, and Podman, see Ansible's blog post series, Developing and Testing Ansible Roles with Molecule and Podman_.
+
+* https://www.ansible.com/blog/developing-and-testing-ansible-roles-with-molecule-and-podman-part-1[Part 1]
+* https://www.ansible.com/blog/developing-and-testing-ansible-roles-with-molecule-and-podman-part-2[Part 2]
+
+== Contributing
+
+Contributions in the form of issues, feedback, and even pull requests are welcome.
+Make sure to adhere to the project's link:CODE_OF_CONDUCT.adoc[Code of Conduct].
+
+== Open Source Software
+
+This project is built on the hard work of countless open source contributors.
+Several of these projects are enumerated below.
+
+* https://www.ansible.com/[Ansible]
+* https://asciidoctor.org/[Asciidoctor]
+* https://asdf-vm.com/#/[asdf]
+* {Debian}
+* {Fedora}
+* https://direnv.net/[direnv]
+* https://git-scm.com/[Git]
+* https://www.linuxfoundation.org/[Linux]
+* https://molecule.readthedocs.io/en/latest/[Molecule]
+* https://www.openssh.com/[OpenSSH]
+* https://pipenv.pypa.io/en/latest/[Pipenv]
+* https://podman.io/[Podman]
+* https://www.python.org/[Python]
+* https://rouge.jneen.net/[Rouge]
+* https://www.ruby-lang.org/en/[Ruby]
+* {Ubuntu}
+
+== Code of Conduct
+
+The project's Code of Conduct is available in the link:CODE_OF_CONDUCT.adoc[Code of Conduct] file.
+
+== License
+
+This repository is licensed under the https://www.gnu.org/licenses/gpl-3.0.html[GPLv3], available in the link:LICENSE.adoc[license file].
+
+© 2021 Jordan Williams
+
+== Authors
+
+mailto:{email}[{author}]

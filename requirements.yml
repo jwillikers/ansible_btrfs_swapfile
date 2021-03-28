@@ -1,0 +1,5 @@
+collections:
+  - ansible.posix
+
+roles:
+  - geerlingguy.swap
