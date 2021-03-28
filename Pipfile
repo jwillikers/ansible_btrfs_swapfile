@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 molecule = {extras = ["lint", "podman"], version = "*"}
 jmespath = "*"
+ansible = "*"
 
 [dev-packages]
 
