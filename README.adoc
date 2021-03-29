@@ -82,7 +82,7 @@ Fedora:::
 +
 [source,sh]
 ----
-➜ pipenv run molecule test --scenario local -- --ask-become-pass
+➜ pipenv run molecule converge --scenario-name local
 ----
 
 == Reproducible Development Environment
