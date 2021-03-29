@@ -2,6 +2,7 @@
     "cSpell.words": [
         "Ansible's",
         "Btrfs",
+        "NOPASSWD",
         "Pipenv",
         "Pipenv's",
         "Pipfile",
@@ -36,6 +37,7 @@
         "noglob",
         "pipx",
         "pyenv",
+        "pypa",
         "qmark",
         "robbyrussell",
         "robbyrussell's",
