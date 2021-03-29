@@ -32,8 +32,8 @@
 - name: Create the swapfile and configure swappiness
   ansible.builtin.include_role:
     name: geerlingguy.swap
-  vars:
-    swap_file_path: "{{ swap_file_path }}"
+  # vars:
+  #   swap_file_path: "{{ swap_file_path }}"
     # swap_swappiness: "60"
 # - name: Initialize the swapfile as swap
 
