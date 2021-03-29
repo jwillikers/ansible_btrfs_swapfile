@@ -6,16 +6,19 @@ driver:
 platforms:
   - name: fedora33
     image: docker.io/fedora:33
+    privileged: true
     pre_build_image: true
     groups:
       - Fedora
   - name: fedora34
     image: docker.io/fedora:34
+    privileged: true
     pre_build_image: true
     groups:
       - Fedora
   - name: ubuntu
     image: docker.io/pycontribs/ubuntu
+    privileged: true
     pre_build_image: true
     groups:
       - Ubuntu
