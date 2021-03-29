@@ -21,18 +21,19 @@
 
 - name: Prepare the Btrfs swap subvolume and initial swapfile
   ansible.builtin.include_tasks: btrfs.yml
-  when: "ansible_mounts|json_query('[?mount == `/`].mount') == 'btrfs'"
+  when: "ansible_mounts|json_query('[?mount == `/`].fstype') == 'btrfs'"
 
 - name: If Btrfs isn't being used, just create a typical swapfile at /swapfile
   ansible.builtin.set_fact: 
     swap_file_path: /swapfile
-  when: "ansible_mounts|json_query('[?mount == `/`].mount') != 'btrfs'"
+    cacheable: true
+  when: "ansible_mounts|json_query('[?mount == `/`].fstype') != 'btrfs'"
 
 - name: Create the swapfile and configure swappiness
   ansible.builtin.include_role:
     name: geerlingguy.swap
   # vars:
-    # swap_file_path: /swap/swapfile
+  #   swap_file_path: "{{ swap_file_path }}"
     # swap_swappiness: "60"
 # - name: Initialize the swapfile as swap
 
