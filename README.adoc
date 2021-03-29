@@ -24,6 +24,20 @@ An Ansible role to create and configure a Btrfs swapfile.
 == Quick Start
 
 To use this role, you're best off installing the necessary Python dependencies through Pipenv.
+The instructions here will run this role on the local machine using the _local_ Molecule scenario.
+
+[NOTE]
+====
+The default scenario requires Podman to be installed on the system and tests the role in containers.
+The following section discusses this in more detail.
+====
+
+. Configure password-less Sudo privileges for the user running Molecule.
++
+[source,sh]
+----
+➜ echo "$USER  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$USER
+----
 
 . Clone this project's Git repository.
 +
@@ -78,7 +92,7 @@ Fedora:::
 ➜ pipenv install
 ----
 
-. To run locally, execute the _local_ scenario with Molecule via Pipenv, of course.
+. Using Pipenv's virtual environment, execute Molecule's Converge playbook for the _local_ scenario, targeting the host machine.
 +
 [source,sh]
 ----
@@ -490,20 +504,24 @@ direnv: error /home/ubuntu/Source/MyProject/.envrc is blocked. Run `direnv allow
 
 . Enable automatic loading of the project's environment.
 +
+--
 [source,sh]
 ----
 ➜ direnv allow
 ----
 
 Now, whenever you change into the project directory, the project's virtual environment will automatically be loaded for you.
+--
 
-=== Test
+. Install Podman according to https://podman.io/getting-started/installation[the installation documentation].
+
+== Test
 
 To create the container, run everything, test, and subsequently destroy the container, use `molecule test` from the project directory.
 
 [source,sh]
 ----
-➜ molecule test
+➜ pipenv run molecule test
 ----
 
 == References
